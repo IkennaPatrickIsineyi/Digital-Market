@@ -1,0 +1,11 @@
+# dependencies
+/dm-backend/node_modules
+/dm-app/node_modules
+
+# sqlite executable
+/dm-backend/sqlite
+
+#this that must not be seen :(
+.env
+dmdb.db
+testdb.db
