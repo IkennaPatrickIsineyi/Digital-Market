@@ -32,9 +32,13 @@ const app = express();
 
 //load session
 app.use(session({
+	name: 'dm-app',
 	secret: 'fine wine',
 	resave: false,
-	saveUninitialized: true
+	saveUninitialized: true,
+	cookie: {
+		maxAge: 86400000
+	}
 }));
 
 //get port value from environment

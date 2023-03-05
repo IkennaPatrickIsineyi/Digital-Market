@@ -302,6 +302,12 @@ exports.getTop10LatestItems = (result) => {
 	where i.qty>0 order by date_added desc, time_added desc limit 10", result);
 };
 
+//get user's email,first name, admin status, seller status
+exports.identifyUser = (email, result) => {
+	sql.all("select email,first_name,is_admin,is_seller from usertb where\
+	email=?", [email], result);
+};
+
 //register the new click in the interactiontb
 //After this succeeds, a trigger will automatically increase the popularity factor
 //of this particular item by 0.5

@@ -31,7 +31,7 @@ router.post('/transaction-history', controller.isLoggedIn, controller.getTransac
 //get item details
 router.get('/item-details', controller.getItemDetails);
 //get user details
-router.post('/user-details', controller.isLoggedIn, controller.getUserDetails);
+router.get('/user-details', controller.isLoggedIn, controller.getUserDetails);
 //get all users' details
 router.post('/all-users', controller.isLoggedIn, controller.getAllUsers);
 //get user inventory

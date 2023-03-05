@@ -25,7 +25,16 @@ exports.signIn = (event, state, updateState) => {
 
         const callback = (body) => {
             if (body?.result) {
-                showSnackBar('Login success', 'success');
+                //showSnackBar('Login success', 'success', body.result);
+
+                console.log('Login success', 'success', body.result)
+
+                state.navigate('/', {
+                    state: {
+                        frontPage: body.result.frontPage,
+                        userData: body.result.userData
+                    }
+                })
             }
             else if (body?.error === 'failed') {
                 showSnackBar('Wrong email and password', 'error');

@@ -384,7 +384,8 @@ exports.getItemDetails = (req, res) => {
 //get the items that are trending, recently viewed by this user and recently added 
 //to the market respectively. These 3 set of items will be used to build the front page 
 exports.getFrontPageItems = (req, res) => {
-	const frontPageItems = {}
+	const frontPageItems = {};
+	let userData = {}
 	//get trending items
 	db.getTop10TrendingItems(function (err, result) {
 		if (err) {
@@ -408,7 +409,17 @@ exports.getFrontPageItems = (req, res) => {
 							frontPageItems.latest = [];
 						}
 						else frontPageItems.latest = result;
-						return res.send({ result: JSON.stringify(frontPageItems) });
+						//get email,first name, admin status,
+						// seller status of user else set userdata to null
+						db.identifyUser(req.session.user, function (err, result) {
+							if (err) {
+								console.log(err);
+							}
+							console.log(result[0]);
+							//userData = { ...result[0] };
+							return res.send({ result: { frontPage: frontPageItems, userData: result[0] } });
+						})
+
 					});
 				}
 			});
@@ -424,8 +435,8 @@ exports.getAdminFrontPage = (req, res) => {
 //get details of user
 exports.getUserDetails = (req, res) => {
 	db.getUserDetails(req.session.user, function (err, result) {
-		if (err) return send500Status(req, res);
-		res.send({ 'data': result });
+		if (err) return res.send({ error: 'failed' });
+		res.send({ result: result });
 	});
 };
 

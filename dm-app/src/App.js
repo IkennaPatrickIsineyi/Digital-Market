@@ -15,6 +15,7 @@ import Home from './Home/Home';
 import SendOtpCode from './SendOtpCode/SendOtpCode';
 import ResetPassword from './ResetPassword/ResetPassword';
 import InputOtpCode from './InputOtpCode/InputOtpCode';
+import IndexPage from './indexPage/indexPage';
 
 
 function App() {
@@ -22,7 +23,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path='/' element={<RootLayout />} >
-          <Route index element={<Login />} />
+          <Route index element={<IndexPage />} />
           <Route path='login' element={<Login />} />
           <Route path='home' element={<Home />} />
           <Route path='register' element={<Register />} />

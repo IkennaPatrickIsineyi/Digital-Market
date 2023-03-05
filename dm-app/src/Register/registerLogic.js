@@ -8,6 +8,15 @@ exports.signUp = (event, state, updateState) => {
     const gender = state.gender;
     const isSeller = state.isSeller;
 
+    const showSnackBar = (message, severity) => {
+        updateState({
+            snackbar: {
+                ...state.snackbar, open: true,
+                message: message, severity: severity
+            }
+        })
+    }
+
     event.preventDefault();
     if (email && password1 && password2 && firstName && lastName
         && gender && isSeller && (password1 === password2)) {
@@ -25,6 +34,12 @@ exports.signUp = (event, state, updateState) => {
         const callback = (body) => {
             if (body?.result) {
                 console.log('success');
+                state.navigate('/', {
+                    state: {
+                        frontPage: body.result.frontPage,
+                        userData: body.result.userData
+                    }
+                })
             }
             else if (body?.error === 'already-logged-in') {
                 console.log('already logged in');
@@ -47,7 +62,7 @@ exports.signUp = (event, state, updateState) => {
             }
         }
 
-        state.remoteRequest('register', payload, callback);
+        state.remoteRequest('register', payload, showSnackBar, callback);
     }
     else {
         console.log('email,password,gender,lastname,firstname,isseller cannot be empty')

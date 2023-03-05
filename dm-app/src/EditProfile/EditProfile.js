@@ -1,8 +1,18 @@
 import { Button, Card, CardContent, Container, Divider, FormControlLabel, Grid, Radio, RadioGroup, TextField, Typography } from "@mui/material";
 import { Box } from "@mui/system";
+import { useState } from "react";
 
 function EditProfile() {
-    const labelArr = [['Email', 'email'], ['Phone', 'phone']];
+    const labelArr = [['First Name', 'text'], ['Last Name', 'text']];
+
+    const [state, setState] = useState({});
+
+    const updateState = (newValue) => {
+        setState((previousValue) => {
+            return { ...previousValue, ...newValue }
+        })
+    }
+
     const values = { email: 'kfljjlds@jds.jf', phone: '234245524', seller: true };
 
     return (

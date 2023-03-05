@@ -4,10 +4,12 @@ import Submit from '@mui/icons-material/Send'
 import { useState } from "react";
 import { signUp } from "./registerLogic";
 import { remoteRequest } from "../model";
+import { useNavigate } from "react-router-dom";
 
 function Register() {
+    const navigate = useNavigate();
     const [states, setState] = useState({
-        remoteRequest: remoteRequest,
+        remoteRequest: remoteRequest, navigate: navigate,
         email: '', password1: '', password2: '',
         firstName: '', lastName: '', gender: '', isSeller: false
     });

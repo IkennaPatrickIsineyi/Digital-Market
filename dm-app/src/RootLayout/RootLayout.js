@@ -1,6 +1,6 @@
 import { Outlet } from "react-router-dom";
 //import AppBar from '@mui/material/AppBar';
-import { AppBar, Divider, IconButton, Toolbar, Typography } from "@mui/material";
+import { AppBar, IconButton, Toolbar, Typography } from "@mui/material";
 import Menu from "@mui/icons-material/Menu";
 
 function RootLayout() {

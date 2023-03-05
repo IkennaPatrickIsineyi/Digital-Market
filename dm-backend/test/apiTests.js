@@ -886,7 +886,7 @@ describe('test container', () => {
                     console.log(err);
                     return done();
                 }
-                JSON.parse(res.body.result).recentlyViewed.should.have.lengthOf(0);
+                res.body.result.frontPage.recentlyViewed.should.have.lengthOf(0);
                 done();
             });
         });
@@ -910,7 +910,7 @@ describe('test container', () => {
                     return done();
                 }
                 res.body.should.have.property('result');
-                JSON.parse(res.body.result).recentlyViewed.length.should.be.above(0);
+                res.body.result.frontPage.recentlyViewed.length.should.be.above(0);
                 done();
             });
         });
