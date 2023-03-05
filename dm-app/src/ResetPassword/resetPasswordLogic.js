@@ -5,6 +5,15 @@ exports.verifyOtp = (event, state, updateState) => {
     const password1 = state.password1;
     const password2 = state.password2;
 
+    const showSnackBar = (message, severity) => {
+        updateState({
+            snackbar: {
+                ...state.snackbar, open: true,
+                message: message, severity: severity
+            }
+        })
+    }
+
     event.preventDefault();
     if (otp && password1 && password2 && (password1 === password2)) {
         const body = JSON.stringify({ otp: otp, password: password1 })
@@ -20,16 +29,16 @@ exports.verifyOtp = (event, state, updateState) => {
                 state.navigate('/login', { replace: true })
             }
             else if (body?.error === 'invalid-otp') {
-                console.log('invalid otp');
+                showSnackBar('Invalid OTP', 'error');
             }
             else {
-                console.log('try again later');
+                showSnackBar('Something went wrong... Try again later', 'error');
             }
         }
 
-        state.remoteRequest('reset-password', payload, callback);
+        state.remoteRequest('reset-password', payload, showSnackBar, callback);
     }
     else {
-        console.log('otp or password cannot be empty')
+        showSnackBar('OTP and password are required', 'error');
     }
 } 

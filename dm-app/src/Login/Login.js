@@ -5,19 +5,18 @@ import { signIn, gotoSignUpPage, gotoResetPasswordPage } from './loginLogic';
 import { useState } from "react";
 import { useNavigate } from 'react-router-dom';
 import { remoteRequest } from '../model';
+import { snackBar } from "../SharedComponents/SharedComponent";
 
 
 function Login() {
     const navigate = useNavigate();
     const [state, setState] = useState({
         navigate: navigate,
-        remoteRequest: remoteRequest, email: '', password: ''
+        remoteRequest: remoteRequest, email: '', password: '',
+        snackbar: { open: false, message: '', severity: '', autoHideDuration: 6000 }
     });
 
-    console.log(state);
-
     const updateState = (newValue) => {
-        console.log(newValue);
         return setState((previousValue) => { return { ...previousValue, ...newValue } });
     };
 
@@ -62,6 +61,7 @@ function Login() {
                         </Grid>
                     </CardContent>
                 </Card>
+                {snackBar(state, updateState)}
             </Box>
         </>
     );

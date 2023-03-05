@@ -1,12 +1,26 @@
-import { Button, Card, CardActionArea, CardActions, CardContent, CardHeader, CardMedia, Container, Divider, Grid, IconButton, Typography } from "@mui/material";
+import { Button, Card, CardActions, CardContent, CardHeader, CardMedia, Container, Grid, IconButton, Typography } from "@mui/material";
 import sampleImg from '../images/icons8-doctor-male-48.png';
 import AddShoppingCart from "@mui/icons-material/AddShoppingCart";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 function Home() {
+    const navigate = useNavigate();
+
+    const [state, setState] = useState({ trending: {}, latest: {}, viewed: {} });
+
+    const updateState = (newValue) => {
+        setState((previousValue) => {
+            return { ...previousValue, ...newValue }
+        })
+    }
+
     return (
         <>
             <Grid container >
+
                 <Grid container lg={4} xs={12} order={{ lg: 1, xs: 2 }} >
+                    {/*  For trending items */}
                     <Container>
                         <Card>
                             <CardContent>
@@ -49,7 +63,7 @@ function Home() {
                 </Grid>
 
                 <Grid container rowSpacing={1} lg={4} xs={12} order={{ lg: 2, xs: 1 }}>
-
+                    {/* For most recently added items */}
                     {[...Array(25)].map((_, indx) =>
                     (<Grid item lg={4} xs={12}>
                         <Container>
@@ -84,6 +98,7 @@ function Home() {
                 </Grid>
 
                 <Grid container lg={4} xs={12} order={{ lg: 3, xs: 3 }}>
+                    {/* For recently viewed items */}
                     <Container>
                         <Card>
                             <CardContent>

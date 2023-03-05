@@ -4,6 +4,15 @@ exports.signIn = (event, state, updateState) => {
     const email = state.email;
     const password = state.password;
 
+    const showSnackBar = (message, severity) => {
+        updateState({
+            snackbar: {
+                ...state.snackbar, open: true,
+                message: message, severity: severity
+            }
+        })
+    }
+
     event.preventDefault();
     if (email && password) {
         const body = JSON.stringify({ email: email, password: password });
@@ -16,20 +25,20 @@ exports.signIn = (event, state, updateState) => {
 
         const callback = (body) => {
             if (body?.result) {
-                console.log('success');
+                showSnackBar('Login success', 'success');
             }
             else if (body?.error === 'failed') {
-                console.log('invalid data');
+                showSnackBar('Wrong email and password', 'error');
             }
             else if (body?.error === 'already-logged-in') {
-                console.log('already logged in');
+                showSnackBar('Already logged in', 'info');
             }
         }
 
-        state.remoteRequest('login', payload, callback);
+        state.remoteRequest('login', payload, showSnackBar, callback);
     }
     else {
-        console.log('email or password cannot be empty')
+        showSnackBar('email and password are required', 'error');
     }
 };
 

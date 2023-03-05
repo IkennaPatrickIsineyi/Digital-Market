@@ -2,18 +2,21 @@ import { Box, Button, Card, CardContent, Grid, TextField } from "@mui/material";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { remoteRequest } from "../model";
+import { snackBar } from "../SharedComponents/SharedComponent";
 import { verifyOtp } from "./resetPasswordLogic";
 
 function ResetPassword() {
     const navigate = useNavigate();
-    const [states, setState] = useState({
+    const [state, setState] = useState({
         navigate: navigate,
-        remoteRequest: remoteRequest, otp: 0, password1: '', password2: ''
+        remoteRequest: remoteRequest, otp: 0, password1: '', password2: '',
+        snackbar: { open: false, message: '', severity: '', autoHideDuration: 6000 }
     });
 
     const updateState = (newValue) => {
         setState((previousValue) => { return { ...previousValue, ...newValue } });
     }
+
 
     return (
         <Box display='flex' justifyContent='center' alignItems='center'>
@@ -39,14 +42,14 @@ function ResetPassword() {
                         </Grid>
                         <Grid item xs={12} display='flex' justifyContent='center' alignItems='center'>
                             <Button variant="contained"
-                                onClick={(event) => { verifyOtp(event, states, updateState) }}>
+                                onClick={(event) => { verifyOtp(event, state, updateState) }}>
                                 Reset Password
                             </Button>
                         </Grid>
                     </Grid>
                 </CardContent>
             </Card>
-
+            {snackBar(state, updateState)}
         </Box>
     );
 }

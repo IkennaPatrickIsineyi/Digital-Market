@@ -1,24 +1,33 @@
 
-exports.resetPassword = (event, state, updateState) => {
+exports.sendOtp = (event, state, updateState) => {
     console.log('reset password');
     const email = state.email;
+
+    const showSnackBar = (message, severity) => {
+        updateState({
+            snackbar: {
+                ...state.snackbar, open: true,
+                message: message, severity: severity
+            }
+        })
+    }
+
     event.preventDefault();
     if (email) {
         const payload = { method: 'get', credentials: 'include' };
 
         const callback = (body) => {
             if (body?.result === 'otp-sent') {
-                console.log('success');
                 state.navigate('/new-password', { replace: true })
             }
             else {
-                console.log('invalid');
+                showSnackBar('Invalid', 'error');
             }
         }
 
-        state.remoteRequest('reset-password/?email=' + email, payload, callback);
+        state.remoteRequest('reset-password/?email=' + email, payload, showSnackBar, callback);
     }
     else {
-        console.log('email cannot be empty')
+        showSnackBar('email is required', 'error');
     }
 } 
