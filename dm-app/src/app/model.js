@@ -8,6 +8,7 @@ exports.remoteRequest = (url: String, payload: Object, showSnackBar, callback: F
 
                 console.log(body);
                 if (response.status !== 200) {
+                    console.log('Something went wrong...Try again later');
                     showSnackBar('Something went wrong...Try again later', 'error');
                 }
                 else callback(body);

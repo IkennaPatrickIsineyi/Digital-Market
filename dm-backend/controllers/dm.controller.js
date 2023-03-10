@@ -58,20 +58,20 @@ exports.setupDatabase = (callback) => {
 exports.isLoggedIn = (req, res, next) => {
 	//console.log('isLoggedIn called with user = ', req.session.user);
 	if (req.session.user) return next();
-	else return res.send({ error: 'not-logged-in' });
+	else return res.send({ userData: req?.userData ?? {}, error: 'not-logged-in' });
 };
 
 //check if user is not logged in: user required to log out first else request fails
 exports.isNotLoggedIn = (req, res, next) => {
 	//console.log('isNotLoggedIn called with user = ', req.session.user);
 	if (!req.session.user) return next();
-	else return res.send({ error: 'already-logged-in' });
+	else return res.send({ userData: req?.userData ?? {}, error: 'already-logged-in' });
 };
 
 //check if user is an admin: user is required to be an admin else request fails
 exports.isAdmin = (req, res, next) => {
 	if (req.session.isAdmin) return next();
-	return res.send({ error: 'admin-only' });
+	return res.send({ userData: req?.userData ?? {}, error: 'admin-only' });
 };
 
 //check if user is not an admin 
@@ -83,7 +83,7 @@ exports.isNotAdmin = (req, res, next) => {
 //check if user is a seller: user is required to be a seller else request fails
 exports.isSeller = (req, res, next) => {
 	if (req.session.isSeller) return next();
-	return res.send({ error: 'seller-only' });
+	return res.send({ userData: req?.userData ?? {}, error: 'seller-only' });
 };
 
 const frontPage = (req, res, isAdmin) => {
@@ -92,50 +92,88 @@ const frontPage = (req, res, isAdmin) => {
 }
 
 //validate login credentials. and log in user
-exports.login = (req, res) => {
-	const email = req.body.email;
-	const password = req.body.password;
+exports.login = (req, res, next) => {
+
+	const body = req.body;
+	const email = body.email;
+	const password = body.password;
 	const sessionId = req.session.id;
+	const returnPath = body.returnPath;
+	const returnMethod = body.returnMethod;
+	const returnBody = body.returnBody;
+	const reRoute = body.reRoute;
+	let userData = {};
+
+	console.log('login');
 
 	db.getPasswordHash(email, function (err, result) {
+		console.log('getPasswordHash', result);
 		if (err) {
 			//error occurred
-			return res.send({ error: 'failed', errMsg: 'retrieval' });
+			console.log(err);
+			return res.send({ userData: req?.userData ?? {}, error: 'failed', errMsg: 'retrieval' });
 		}
 		else if (result.length) {
 			//email exists
 			bcrypt.compare(password, result[0].password,
 				function (err, match) {
 					if (match) {
+						console.log('matched');
 						//regenerate session and log user in
 						req.session.regenerate(function (err) {
-							if (err) return res.send({ error: 'failed', errMsg: 'regeneration' });
+							if (err) return res.send({ userData: req?.userData ?? {}, error: 'failed', errMsg: 'regeneration' });
 
 							//save changes
 							req.session.save(function (err) {
-								if (err) return res.send({ error: 'failed', errMsg: 'saving' });
+								console.log('saving');
+								if (err) return res.send({ userData: req?.userData ?? {}, error: 'failed', errMsg: 'saving' });
 								// log user in by setting user id to email 
 								req.session.user = email;
-								req.session.isAdmin = result[0].is_admin;
-								req.session.isSeller = result[0].is_seller;
+								req.session.isAdmin = result[0]?.is_admin;
+								req.session.isSeller = result[0]?.is_seller;
+
+								userData = {
+									email: email, is_admin: result[0]?.is_admin,
+									is_seller: result[0]?.is_seller
+								};
+
+
+
 								db.updateSessionId(sessionId, req.session.id, function (err) {
 									if (err) {
 										console.log(err);
 									}
-									frontPage(req, res, req.session.isAdmin);
+									if (reRoute) {
+										//route to the return route
+										req.url = '/api' + returnPath;
+										req.method = returnMethod;
+										if (returnMethod !== 'get')
+											req.body = returnBody;
+										req.userData = { ...userData };
+										req.app.handle(req, res);
+									}
+									else {
+										console.log(userData);
+										return res.send({ userData: userData ?? {}, result: {} });
+									}
+									//frontPage(req, res, req.session.isAdmin);
 								});
+
+								//return  res.send({ userData: req?.userData??{}, result: { frontPage: frontPageItems, userData: result[0] ?? {} } });
+
+
 							});//req.session.save
 						});//req.session.regenerate
 					}
 					else {
 						//reject login request
-						return res.send({ error: 'failed', errMsg: 'mismatch' });
+						return res.send({ userData: req?.userData ?? {}, error: 'failed', errMsg: 'mismatch' });
 					}
 				});//bcrypt
 		}//else if
 		else {
 			//email does not exist
-			return res.send({ error: 'failed', errMsg: 'no-user' });
+			return res.send({ userData: req?.userData ?? {}, error: 'failed', errMsg: 'no-user' });
 		}
 	});//db.getPasswordHash
 };//exports.validateLoginCredential
@@ -144,9 +182,16 @@ exports.login = (req, res) => {
 exports.registerUser = (req, res) => {
 	const sessionId = req.session.id;
 	console.log('register called', sessionId);
+
+	const body = req.body;
+	const returnPath = body.returnPath;
+	const returnMethod = body.returnMethod;
+	const returnBody = body.returnBody;
+	const reRoute = body.reRoute;
+	let userData = {}
 	//generate hash of password using saltrounds of 10 
 	bcrypt.hash(req.body.password, 10, function (err, passwordHash) {
-		if (err) return res.send({ error: 'failed', errMsg: 'hashErr' });
+		if (err) return res.send({ userData: req?.userData ?? {}, error: 'failed', errMsg: 'hashErr' });
 		//register user
 		db.registerUser(req.body.firstName, req.body.lastName,
 			req.body.email, passwordHash, req.body.gender, req.body.isSeller,
@@ -154,38 +199,57 @@ exports.registerUser = (req, res) => {
 				console.log('registerUser returned');
 				if (err) {
 					console.log(err);
-					return res.send({ error: 'failed', errMsg: 'bad-db-input' });
+					return res.send({ userData: req?.userData ?? {}, error: 'failed', errMsg: 'bad-db-input' });
 				}
 				if (this.changes) {
 					//getFrontPageItems(req, res)
 					//successful so change session id of this user 
 					req.session.regenerate(function (err) {
-						if (err) return res.send({ error: 'failed', errMsg: 'RegenerationErr' });
+						if (err) return res.send({ userData: req?.userData ?? {}, error: 'failed', errMsg: 'RegenerationErr' });
 
 						//save changes to session
 						req.session.save(function (err) {
 							if (err) {
 								console.log(err);
-								return res.send({ error: 'failed', errMsg: 'savingErr' });
+								return res.send({ userData: req?.userData ?? {}, error: 'failed', errMsg: 'savingErr' });
 							}
 							console.log('prevSess: ', sessionId, 'newSess: ', req.session.id);
 							//log in user by setting user id of user to email
 							req.session.user = req.body.email;
 							req.session.isSeller = req.body.isSeller;
 							req.session.isAdmin = false;
+
+							userData = {
+								email: req.body.email, is_admin: false,
+								is_seller: req.body.isSeller
+							};
 							db.updateSessionId(sessionId, req.session.id, function (err) {
 								if (err) {
 									console.log(err);
 								}
-								frontPage(req, res, req.session.isAdmin);
-								//res.send({ result: 'success' });
+								if (reRoute) {
+									//route to the return route
+									req.url = '/api' + returnPath;
+									console.log(req.url);
+									req.method = returnMethod;
+									if (returnMethod !== 'get')
+										req.body = returnBody;
+									req.userData = { ...userData };
+									//console.log(req.url);
+									req.app.handle(req, res);
+								}
+								else {
+									return res.send({ userData: result[0] ?? {}, result: {} });
+								}
+								//frontPage(req, res, req.session.isAdmin);
+								// res.send({ userData: req?.userData??{}, result: 'success' });
 							})
 						});
 					});
 				}
 				else {
 					//email clashed with existing email
-					res.send({ error: 'failed', errMsg: 'not-created' });
+					res.send({ userData: req?.userData ?? {}, error: 'failed', errMsg: 'not-created' });
 				}
 			});
 	});
@@ -196,17 +260,17 @@ exports.logout = (req, res) => {
 	req.session.regenerate(function (err) {
 		if (err) {
 			console.log('regen error');
-			return res.send({ error: 'saving-error', result: 'logged-out' });
+			return res.send({ userData: req?.userData ?? {}, error: 'saving-error', result: 'logged-out' });
 		}
 		else {
 			req.session.save(function (err) {
 				if (err) {
 					console.log("saving error");
-					res.send({ error: 'saving-error', result: 'logged-out' });
+					res.send({ userData: req?.userData ?? {}, error: 'saving-error', result: 'logged-out' });
 				}
 				else {
 					//console.log('saved');
-					res.send({ result: 'logged-out' });
+					res.send({ userData: req?.userData ?? {}, result: 'logged-out' });
 				}
 			})
 		}
@@ -216,14 +280,17 @@ exports.logout = (req, res) => {
 //update profile
 exports.updateProfile = (req, res) => {
 	db.updateProfile(req.body.firstName, req.body.lastName,
-		req.session.user, req.body.isSeller,
+		req.session.user, req.body.isSeller, req.body.gender, req.body.phone,
 		function (err) {
-			if (err) return res.send({ error: 'failed' });
+			if (err) {
+				console.log(err);
+				return res.send({ userData: req?.userData ?? {}, error: 'failed' });
+			}
 			if (this.changes) {
-				res.send({ result: 'success' });
+				res.send({ userData: req?.userData ?? {}, result: 'success' });
 			}
 			else {
-				res.send({ error: 'failed', result: 'unknown-error' });
+				res.send({ userData: req?.userData ?? {}, error: 'failed', result: 'unknown-error' });
 			}
 		});
 };
@@ -259,28 +326,28 @@ exports.sendOTP = (req, res) => {
 exports.changePassword = (req, res) => {
 	const sessionId = req.session.id;
 	if (req.session.otp !== req.body.otp) {
-		return res.send({ error: 'invalid-otp' });
+		return res.send({ userData: req?.userData ?? {}, error: 'invalid-otp' });
 	}
 	else bcrypt.hash(req.body.password, 10, function (err, passwordHash) {
-		if (err) res.send({ error: 'failed', errMsg: 'hashErr' });
+		if (err) res.send({ userData: req?.userData ?? {}, error: 'failed', errMsg: 'hashErr' });
 		db.changePassword(passwordHash, req.session.email,
 			function (err) {
-				if (err) return res.send({ error: 'failed', errMsg: 'bad-db-input' });
+				if (err) return res.send({ userData: req?.userData ?? {}, error: 'failed', errMsg: 'bad-db-input' });
 				if (this.changes) {
 					req.session.otp = null; //delete otp code
 					req.session.email = null; //delete email 
 					// change session id of this user to prevent fixation
 					req.session.regenerate(function (err) {
-						if (err) return res.send({ error: 'failed', errMsg: 'RegenerationErr' });
+						if (err) return res.send({ userData: req?.userData ?? {}, error: 'failed', errMsg: 'RegenerationErr' });
 						//save changes to session
 						req.session.save(function (err) {
-							if (err) return res.send({ error: 'failed', errMsg: 'savingErr' });
+							if (err) return res.send({ userData: req?.userData ?? {}, error: 'failed', errMsg: 'savingErr' });
 							console.log('prevSess: ', sessionId, 'newSess: ', req.session.id)
 							db.updateSessionId(sessionId, req.session.id, function (err) {
 								if (err) {
 									console.log(err);
 								}
-								res.send({ result: 'success' });
+								res.send({ userData: req?.userData ?? {}, result: 'success' });
 							});
 						});
 					});
@@ -288,7 +355,7 @@ exports.changePassword = (req, res) => {
 				else {
 					req.session.otp = null; //delete otp code
 					req.session.email = null; //delete email 
-					res.send({ error: 'failed', errMsg: 'unknown' });
+					res.send({ userData: req?.userData ?? {}, error: 'failed', errMsg: 'unknown' });
 				}
 			});
 	});
@@ -299,13 +366,14 @@ exports.addCategory = (req, res) => {
 	db.addCategory(req.body.category, req.body?.description || null,
 		function (err) {
 			if (err) {
-				return res.send({ error: 'failed', errMsg: 'duplicate' });
+				console.log(err);
+				return res.send({ userData: req?.userData ?? {}, error: 'failed', errMsg: 'duplicate' });
 			}
 			else if (this.changes) {
-				return res.send({ result: 'success' });
+				return res.send({ userData: req?.userData ?? {}, result: 'success' });
 			}
 			else {
-				res.send({ error: 'failed' });
+				res.send({ userData: req?.userData ?? {}, error: 'failed' });
 			}
 		});
 };
@@ -315,13 +383,16 @@ exports.addProduct = (req, res) => {
 	db.addProduct(req.body.product, req.body.category,
 		function (err) {
 			if (err) {
-				return res.send({ error: 'failed', errMsg: 'bad-db-input', errNum: err.errno });
+				return res.send({
+					userData: req?.userData ?? {}, error: 'failed',
+					errMsg: 'bad-db-input', errNum: err.errno
+				});
 			}
 			else if (this.changes) {
-				return res.send({ result: 'success' });
+				return res.send({ userData: req?.userData ?? {}, result: { product_id: this.lastID } });
 			}
 			else {
-				res.send({ error: 'failed' });
+				res.send({ userData: req?.userData ?? {}, error: 'failed' });
 			}
 		});
 };
@@ -329,16 +400,16 @@ exports.addProduct = (req, res) => {
 //create inventory
 exports.addNewInventory = (req, res) => {
 	db.addNewInventory(req.session.user, req.body.productId, req.body.title,
-		req.body.description, req.body.qty, req.body.price, req.body.imageList,
+		req.body.description, req.body.qty, req.body.price, req.body.imageList ?? ['noImage.jpg'],
 		function (err) {
 			if (err) {
-				res.send({ error: 'failed', errMsg: 'bad-db-input', errNum: err.errno });
+				res.send({ userData: req?.userData ?? {}, error: 'failed', errMsg: 'bad-db-input', errNum: err.errno });
 			}
 			else if (this.changes) {
-				res.send({ result: 'success' });
+				res.send({ userData: req?.userData ?? {}, result: 'success' });
 			}
 			else {
-				res.send({ error: 'failed', errMsg: 'unknown' });
+				res.send({ userData: req?.userData ?? {}, error: 'failed', errMsg: 'unknown' });
 			}
 		}
 	);
@@ -346,8 +417,8 @@ exports.addNewInventory = (req, res) => {
 //get transaction history of a particular user
 exports.getTransactionHistory = (req, res) => {
 	db.getTransactionHistory(req.session.user, function (err, result) {
-		if (err) return res.send({ error: 'failed' });
-		res.send({ result: result });
+		if (err) return res.send({ userData: req?.userData ?? {}, error: 'failed' });
+		res.send({ userData: req?.userData ?? {}, result: result });
 	});
 };
 
@@ -359,7 +430,7 @@ exports.getItemDetails = (req, res) => {
 	const finalResult = { data: {}, imageList: [] };
 	db.getItemDetails(inventoryId, function (err, result) {
 		if (err) {
-			return res.send({ error: 'failed', errMsg: 'bad-db-input' });
+			return res.send({ userData: req?.userData ?? {}, error: 'failed', errMsg: 'bad-db-input' });
 		}
 		if (result.length) {
 			const { image_id, ...withOutImg } = { ...result[0] };
@@ -369,13 +440,13 @@ exports.getItemDetails = (req, res) => {
 
 			db.recordInteraction(inventoryId, req.session.id, function (err) {
 				if (err) {
-					return res.send({ result: result, firstView: false });
+					return res.send({ userData: req?.userData ?? {}, result: result, firstView: false });
 				}
-				return res.send({ result: result, firstView: true });
+				return res.send({ userData: req?.userData ?? {}, result: result, firstView: true });
 			});
 		}
 		else {
-			return res.send({ error: 'invalid' });
+			return res.send({ userData: req?.userData ?? {}, error: 'invalid' });
 		}
 
 	});
@@ -384,8 +455,10 @@ exports.getItemDetails = (req, res) => {
 //get the items that are trending, recently viewed by this user and recently added 
 //to the market respectively. These 3 set of items will be used to build the front page 
 exports.getFrontPageItems = (req, res) => {
+	console.log('regular front page')
 	const frontPageItems = {};
 	let userData = {}
+
 	//get trending items
 	db.getTop10TrendingItems(function (err, result) {
 		if (err) {
@@ -411,14 +484,28 @@ exports.getFrontPageItems = (req, res) => {
 						else frontPageItems.latest = result;
 						//get email,first name, admin status,
 						// seller status of user else set userdata to null
-						db.identifyUser(req.session.user, function (err, result) {
-							if (err) {
-								console.log(err);
-							}
-							console.log(result[0]);
-							//userData = { ...result[0] };
-							return res.send({ result: { frontPage: frontPageItems, userData: result[0] } });
-						})
+						if (!req?.userData) {
+							db.identifyUser(req.session.user, function (err, result) {
+								if (err) {
+									console.log(err);
+								}
+								//userData = { ...result[0] };
+								console.log(frontPageItems);
+								return res.send({
+									userData: result[0] ?? {
+										email: req.session.user,
+										is_admin: false, is_seller: req.session.isSeller
+									},
+									result: { frontPage: frontPageItems }
+								});
+							})
+						}
+						else {
+							return res.send({
+								userData: req?.userData,
+								result: { frontPage: frontPageItems }
+							});
+						}
 
 					});
 				}
@@ -429,14 +516,50 @@ exports.getFrontPageItems = (req, res) => {
 
 //get admin front page
 exports.getAdminFrontPage = (req, res) => {
-	res.send({ result: 'not-built' });
+	res.send({
+		userData: req?.userData ?? { email: req.session.user, is_admin: true, is_seller: false },
+		result: { frontPage: {} }
+	});
 };
 
 //get details of user
 exports.getUserDetails = (req, res) => {
 	db.getUserDetails(req.session.user, function (err, result) {
-		if (err) return res.send({ error: 'failed' });
-		res.send({ result: result });
+		if (err) return res.send({ userData: req?.userData ?? {}, error: 'failed' });
+		res.send({ userData: req?.userData ?? {}, result: result });
+	});
+};
+
+//get profile details of user
+exports.getProfile = (req, res) => {
+	db.getProfile(req.session.user, function (err, result) {
+		if (err) return res.send({ userData: req?.userData ?? {}, error: 'failed' });
+		res.send({ userData: req?.userData ?? {}, result: result[0] });
+	});
+};
+
+//get categories
+exports.getCategories = (req, res) => {
+	db.getCategories(function (err, result) {
+		if (err) {
+			console.log(err);
+			return res.send({ userData: req?.userData ?? {}, error: 'failed' });
+		}
+		console.log(result);
+		res.send({ userData: req?.userData ?? {}, result: result });
+	});
+};
+
+
+//get products
+exports.getProducts = (req, res) => {
+	db.getProducts(function (err, result) {
+		if (err) {
+			console.log(err);
+			return res.send({ userData: req?.userData ?? {}, error: 'failed' });
+		}
+		console.log('result', result);
+		res.send({ userData: req?.userData ?? {}, result: result });
 	});
 };
 
@@ -444,7 +567,7 @@ exports.getUserDetails = (req, res) => {
 exports.getAllUsers = (req, res) => {
 	db.getAllUsers(function (err, result) {
 		if (err) return send500Status(req, res);
-		res.send({ 'data': result });
+		res.send({ userData: req?.userData ?? {}, 'data': result });
 	});
 };
 
@@ -452,7 +575,7 @@ exports.getAllUsers = (req, res) => {
 exports.getUserInventory = (req, res) => {
 	db.getUserInventory(req.session.user, function (err, result) {
 		if (err) return send500Status(req, res);
-		res.send({ 'data': result });
+		res.send({ userData: req?.userData ?? {}, 'data': result });
 	});
 };
 
@@ -463,13 +586,13 @@ exports.addToCart = (req, res) => {
 		req.body.unitPrice, req.body.totalPrice, req.session.user,
 		req.body.seller, function (err) {
 			if (err) {
-				return res.send({ error: 'failed', errMsg: 'bad-db-input' });
+				return res.send({ userData: req?.userData ?? {}, error: 'failed', errMsg: 'bad-db-input' });
 			}
 			if (this.changes) {
-				res.send({ result: 'success' });
+				res.send({ userData: req?.userData ?? {}, result: 'success' });
 			}
 			else {
-				res.send({ error: 'failed', errMsg: 'unknown' });
+				res.send({ userData: req?.userData ?? {}, error: 'failed', errMsg: 'unknown' });
 			}
 		});
 };
@@ -478,10 +601,10 @@ exports.addToCart = (req, res) => {
 exports.getCart = (req, res) => {
 	db.getCart(req.session.user, function (err, result) {
 		if (err) {
-			return res.send({ error: 'failed', errMsg: 'bad-db-input' });
+			return res.send({ userData: req?.userData ?? {}, error: 'failed', errMsg: 'bad-db-input' });
 		}
 		else {
-			return res.send({ result: result });
+			return res.send({ userData: req?.userData ?? {}, result: result });
 		}
 	});
 };
@@ -497,7 +620,7 @@ exports.checkoutWithFlutterwave = (req, res) => {
 		function (err) {
 			if (err) {
 				console.log(err);
-				return res.send({ error: 'failed', errMsg: 'bad-db-input' });
+				return res.send({ userData: req?.userData ?? {}, error: 'failed', errMsg: 'bad-db-input' });
 			}
 			else if (this.changes) {
 				//get the final selling price from trnxtb
@@ -506,7 +629,7 @@ exports.checkoutWithFlutterwave = (req, res) => {
 					console.log(result);
 					if (err) {
 						console.log(err);
-						return res.send({ error: 'failed', errMsg: 'bad-db-input' });
+						return res.send({ userData: req?.userData ?? {}, error: 'failed', errMsg: 'bad-db-input' });
 					}
 					else {
 						trnxRef = result[0]?.trnx_ref;
@@ -537,12 +660,12 @@ exports.checkoutWithFlutterwave = (req, res) => {
 						//send request
 						got.post(url, options).then((response) => {
 							if (response.body.status != 'success')
-								return res.send({ error: 'failed' });
+								return res.send({ userData: req?.userData ?? {}, error: 'failed' });
 
 							response.body.trnxRef = trnxRef;
-							return res.send({ result: response.body }); //redirect user to the url in response.body
+							return res.send({ userData: req?.userData ?? {}, result: response.body }); //redirect user to the url in response.body
 						}, (err) => {
-							return res.send({ error: 'network-error', errMsg: err })
+							return res.send({ userData: req?.userData ?? {}, error: 'network-error', errMsg: err })
 						});
 					}
 				});
@@ -550,7 +673,7 @@ exports.checkoutWithFlutterwave = (req, res) => {
 			else {
 				console.log('unknown error', this);
 
-				return res.send({ error: 'failed', errMsg: 'unknown' });
+				return res.send({ userData: req?.userData ?? {}, error: 'failed', errMsg: 'unknown' });
 			}
 		});
 };
@@ -561,7 +684,7 @@ exports.verifyPayment = (req, res) => {
 		db.getTrnxDetails(req.query.tx_ref, function (err, result) {
 			if (err) {
 				console.log(err);
-				return res.send({ error: 'failed', errMsg: 'bad-db-input' });
+				return res.send({ userData: req?.userData ?? {}, error: 'failed', errMsg: 'bad-db-input' });
 			}
 			else {
 				console.log(req.query.tx_ref, 'done', result);
@@ -580,29 +703,29 @@ exports.verifyPayment = (req, res) => {
 						&& response.data.tx_ref === req.query.tx_ref) {
 						console.log('success');
 						db.finishTransaction(req.query.tx_ref, function (err) {
-							if (err) return res.send({ error: 'failed', errMsg: 'successful' });
+							if (err) return res.send({ userData: req?.userData ?? {}, error: 'failed', errMsg: 'successful' });
 							if (this.changes) {
-								return res.send({ result: 'successful' });
+								return res.send({ userData: req?.userData ?? {}, result: 'successful' });
 							}
 							else {
-								return res.send({ error: 'failed', errMsg: 'duplicate' });
+								return res.send({ userData: req?.userData ?? {}, error: 'failed', errMsg: 'duplicate' });
 							}
 						})
 
 					} else {
 						console.log('failed');
-						return res.send({ error: 'failed', errMsg: 'not-successful' });
+						return res.send({ userData: req?.userData ?? {}, error: 'failed', errMsg: 'not-successful' });
 					}
 				}, (error) => {
 					console.log('network issues', error);
-					return res.send({ error: 'failed', errMsg: 'network-issues' });
+					return res.send({ userData: req?.userData ?? {}, error: 'failed', errMsg: 'network-issues' });
 				});
 			}
 		});
 	}
 	else {
 		console.log('failed');
-		res.send({ error: 'failed', errMsg: 'not-successful' });
+		res.send({ userData: req?.userData ?? {}, error: 'failed', errMsg: 'not-successful' });
 	}
 
 };

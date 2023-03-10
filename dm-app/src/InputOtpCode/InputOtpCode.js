@@ -1,6 +1,6 @@
 import { Box, Button, Card, CardContent, Grid, TextField } from "@mui/material";
 import { useState } from "react";
-import { remoteRequest } from "../model";
+import { remoteRequest } from "../app/model";
 import { verifyOtp } from "./inputOtpCodeLogic";
 
 function InputOtpCode() {

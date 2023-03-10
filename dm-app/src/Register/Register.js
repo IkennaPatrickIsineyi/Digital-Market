@@ -3,13 +3,20 @@ import { Container } from "@mui/material";
 import Submit from '@mui/icons-material/Send'
 import { useState } from "react";
 import { signUp } from "./registerLogic";
-import { remoteRequest } from "../model";
+import { remoteRequest } from "../app/model";
 import { useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from 'react-redux';
+import { loadUserData } from '../app/userDataSlice';
+
+import { loginComplete } from '../app/routeSlice';
 
 function Register() {
     const navigate = useNavigate();
+    const dispatch = useDispatch();
+    const returnData = useSelector(state => state.route);
+
     const [states, setState] = useState({
-        remoteRequest: remoteRequest, navigate: navigate,
+        remoteRequest: remoteRequest, navigate: navigate, returnData: returnData,
         email: '', password1: '', password2: '',
         firstName: '', lastName: '', gender: '', isSeller: false
     });
@@ -82,7 +89,10 @@ function Register() {
                         </Grid>
                         <Grid item xs={12} display={'flex'} justifyContent='center' alignItems={'center'}>
                             <Button variant="contained" startIcon={<Submit />}
-                                onClick={(event) => { signUp(event, states, updateState) }}>
+                                onClick={(event) => {
+                                    signUp(event, states, updateState,
+                                        dispatch, loadUserData, loginComplete)
+                                }}>
                                 Sign Up
                             </Button>
                         </Grid>

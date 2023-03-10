@@ -164,10 +164,10 @@ exports.registerUser = (firstName, lastName, email, password,
 };
 
 //update profile
-exports.updateProfile = (firstName, lastName, email, isSeller, result) => {
+exports.updateProfile = (firstName, lastName, email, isSeller, gender, phone, result) => {
 	sql.run("update usertb set first_name=?, last_name=?, \
-	is_seller=? where email=?", [firstName, lastName, isSeller, email],
-		result);
+	is_seller=?, gender=?,phone=? where email=?",
+		[firstName, lastName, isSeller, gender, phone, email], result);
 };
 
 //change password
@@ -204,7 +204,7 @@ exports.addNewInventory = (userId, productId, title, description, qty, price, im
 
 	sql.run("insert into inventorytb (user_id,product_id,title,description,qty,price) \
 	values (?,?,?,?,?,?)", [userId, productId, title, description, qty, price],
-		function (err) {
+		(!imgList.length) ? result : function (err) {
 			if (err) result(err);
 			else {
 				imgList.map((item, indx) => {
@@ -230,12 +230,16 @@ exports.getTransactionHistory = (email, result) => {
     where buyer=? or seller=?", [email, email], result);
 };
 
-
-
 //get details of user
 exports.getUserDetails = (email, result) => {
 	sql.all("select email, phone, first_name, last_name, is_seller,\
 	gender, picture, is_banned from usertb where email=?", [email], result);
+};
+
+//get profile details of user
+exports.getProfile = (email, result) => {
+	sql.all("select  phone, first_name firstName, last_name lastName, is_seller isSeller,\
+	gender, picture from usertb where email=?", [email], result);
 };
 
 //get all users
@@ -338,6 +342,25 @@ exports.getCart = (buyer, result) => {
 	t.unit_price*t.qty as total_price, i.title from trnxtb as t inner join inventorytb \
 	as i on t.inventory_id= i.inventory_id where t.buyer=? and t.status=?",
 		[buyer, 'pending'], result);
+};
+
+//get categories
+exports.getCategories = (result) => {
+	sql.all("select category,description from categorytb",
+		result);
+};
+
+//get products
+exports.getProducts = (result) => {
+	sql.all("select product_id,product_name, category from producttb;",
+		function (err, result1) {
+			sql.all("select category from categorytb;",
+				function (err, result2) {
+					result(err, { categories: result2?.map(obj => obj?.category), products: result1 })
+				}
+			);
+		}
+	);
 };
 
 //get transaction details

@@ -4,15 +4,23 @@ import CreateAcct from '@mui/icons-material/Create';
 import { signIn, gotoSignUpPage, gotoResetPasswordPage } from './loginLogic';
 import { useState } from "react";
 import { useNavigate } from 'react-router-dom';
-import { remoteRequest } from '../model';
-import { snackBar } from "../SharedComponents/SharedComponent";
-
+import { remoteRequest } from '../app/model';
+import { snackBar } from "../app/SharedComponent";
+import { useDispatch } from 'react-redux';
+import { loadUserData } from '../app/userDataSlice';
+import { loginComplete } from '../app/routeSlice';
+import { useSelector } from 'react-redux';
 
 function Login() {
     const navigate = useNavigate();
+    const dispatch = useDispatch();
+    const returnData = useSelector(state => state.route);
+    //const nextRoute = useSelector(state => state.route.nextRoute);
+
+
     const [state, setState] = useState({
         navigate: navigate,
-        remoteRequest: remoteRequest, email: '', password: '',
+        remoteRequest: remoteRequest, email: '', password: '', returnData: returnData,
         snackbar: { open: false, message: '', severity: '', autoHideDuration: 6000 }
     });
 
@@ -43,7 +51,10 @@ function Login() {
                             </Grid>
                             <Grid item xs={12} sm={6} display='flex' justifyContent='center' alignItems='center'>
                                 <Button variant="contained" startIcon={<SignIn />} size='large'
-                                    onClick={(event) => { signIn(event, state, updateState) }}>
+                                    onClick={(event) => {
+                                        signIn(event, state, updateState,
+                                            dispatch, loadUserData, loginComplete)
+                                    }}>
                                     Login
                                 </Button>
                             </Grid>

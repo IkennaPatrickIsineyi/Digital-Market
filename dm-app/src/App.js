@@ -16,6 +16,11 @@ import SendOtpCode from './SendOtpCode/SendOtpCode';
 import ResetPassword from './ResetPassword/ResetPassword';
 import InputOtpCode from './InputOtpCode/InputOtpCode';
 import IndexPage from './indexPage/indexPage';
+import TestComp from './TestComp/TestComp';
+import TestComp2 from './TestComp/TestComp2';
+import Products from './Products/Products';
+import Categories from './Categories/Categories';
+import NewInventory from './NewInventory/NewInventory';
 
 
 function App() {
@@ -38,6 +43,11 @@ function App() {
           <Route path='admin-home' element={<AdminHome />} />
           <Route path='new-password' element={<ResetPassword />} />
           <Route path='password-otp' element={<InputOtpCode />} />
+          <Route path='testComp' element={<TestComp />} />
+          <Route path='testComp2' element={<TestComp2 />} />
+          <Route path='products' element={<Products />} />
+          <Route path='categories' element={<Categories />} />
+          <Route path='new-inventory' element={<NewInventory />} />
         </Route>
       </Routes>
     </BrowserRouter>

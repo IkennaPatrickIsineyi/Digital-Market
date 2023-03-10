@@ -1,5 +1,6 @@
 
-const checkLoginStatus = (state, updateState) => {
+const getHomePage = (state, updateState, remoteRequest, dispatch, loadUserData) => {
+    console.log('checkLoginStatus')
     updateState({ checking: true });
 
     const showSnackBar = (message, severity) => {
@@ -13,10 +14,17 @@ const checkLoginStatus = (state, updateState) => {
 
     const payload = { method: "get", credentials: 'include' };
     const callback = (body) => {
-        updateState({ frontPageData: body.result.frontPage, userData: body.result.userData });
+        //updateState({ frontPageData: body.result.frontPage, userData: body.result.userData }); 
+        //dispatch(loadFrontPageData(body.result.frontPage));
+        //dispatch(loadUserData(body.result.userData)); 
+        const userData = body.userData;
+        dispatch(loadUserData({
+            email: userData?.email, isAdmin: userData?.is_admin,
+            isSeller: (userData?.is_seller === 'true') ? true : false
+        }));
+        updateState({ data: { ...body.result, reRouted: true } });
     }
-
-    state.remoteRequest('', payload, showSnackBar, callback);
+    remoteRequest('', payload, showSnackBar, callback);
 };
 
-export { checkLoginStatus };
+export { getHomePage };

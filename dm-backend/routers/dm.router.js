@@ -9,7 +9,7 @@ const router = require('express').Router();
 //routes definitions//
 console.log('router called...');
 //login: check if logged in. If not, log user in
-router.post('/login', controller.isNotLoggedIn, controller.login);
+router.post('/login', controller.isNotLoggedIn, controller.login,);
 //register user: check if logged in. If not, register user
 router.post('/register', controller.isNotLoggedIn, controller.registerUser);
 //log out user if the user is logged in
@@ -24,6 +24,10 @@ router.post('/reset-password', controller.changePassword);
 router.post('/add-category', controller.isLoggedIn, controller.isAdmin, controller.addCategory);
 //add product: only for admin
 router.post('/add-product', controller.isLoggedIn, controller.isAdmin, controller.addProduct);
+//get product category: only for admin
+router.get('/categories', controller.isLoggedIn, controller.isAdmin, controller.getCategories);
+//get producs: only for admin
+router.get('/products', controller.isLoggedIn, controller.getProducts);
 //add new inventory: only for admin
 router.post('/add-new-inventory', controller.isLoggedIn, controller.isSeller, controller.addNewInventory);
 //get transaction history
@@ -32,6 +36,8 @@ router.post('/transaction-history', controller.isLoggedIn, controller.getTransac
 router.get('/item-details', controller.getItemDetails);
 //get user details
 router.get('/user-details', controller.isLoggedIn, controller.getUserDetails);
+//get profile details
+router.get('/user-profile', controller.isLoggedIn, controller.getProfile);
 //get all users' details
 router.post('/all-users', controller.isLoggedIn, controller.getAllUsers);
 //get user inventory
@@ -56,6 +62,9 @@ router.post('/edit-item-details', controller.isLoggedIn, controller.editInventor
 router.post('/increase-quantity', controller.isLoggedIn, controller.increaseInventoryQty);
 //get front page data
 router.get('/', controller.isNotAdmin, controller.getFrontPageItems);
+
+//console.log(router.stack.filter((item) => item.route.path === '/login/:reply')[0].handle);
+
 
 //get transaction details
 

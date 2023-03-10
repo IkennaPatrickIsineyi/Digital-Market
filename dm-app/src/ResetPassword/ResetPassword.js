@@ -1,8 +1,8 @@
 import { Box, Button, Card, CardContent, Grid, TextField } from "@mui/material";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { remoteRequest } from "../model";
-import { snackBar } from "../SharedComponents/SharedComponent";
+import { remoteRequest } from "../app/model";
+import { snackBar } from "../app/SharedComponent";
 import { verifyOtp } from "./resetPasswordLogic";
 
 function ResetPassword() {

@@ -1,18 +1,35 @@
 import { Button, Card, CardActions, CardContent, CardHeader, CardMedia, Container, Grid, IconButton, Typography } from "@mui/material";
 import sampleImg from '../images/icons8-doctor-male-48.png';
 import AddShoppingCart from "@mui/icons-material/AddShoppingCart";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
+import { dataUsed } from '../app/frontPageSlice';
+//import { getProfile } from "./homeLogic";
+
+import { reRouteRequest } from '../app/routeSlice';
+import { addToCart, getItemDetails } from "./homeLogic";
 
 function Home(props) {
 
-    const trending = props.data.trending;
-    const viewed = props.data.recentlyViewed;
-    const latest = props.data.latest;
+    const trending = props?.data?.trending ?? [];
+    const viewed = props?.data?.recentlyViewed ?? [];
+    const latest = props?.data?.latest ?? [];
+
+    const loginType = useSelector(state => state.route.loginType);
+
+    const dispatch = useDispatch();
+
+    useEffect(() => { dispatch(dataUsed()) }, []);
+
 
     const navigate = useNavigate();
 
-    const [state, setState] = useState({});
+    const [state, setState] = useState({
+        // data: location.state ?? { trending: [], latest[]: viewed: []},
+        loginType: loginType,
+        dispatch: dispatch, reRouteRequest: reRouteRequest
+    });
 
     const updateState = (newValue) => {
         setState((previousValue) => {
@@ -20,41 +37,61 @@ function Home(props) {
         });
     };
 
+    const handleAddToCart = (event) => {
+        console.log('handleAddToCart ', 'id:', event.currentTarget.id)
+        /* addToCart = (event, state, updateState, dispatch,
+            navigate, event.target.id) */
+    }
+
+    const handleItemClick = (event) => {
+        console.log('handleItemClick ', 'id:', event.currentTarget.id)
+        /*  getItemDetails = (event, state, updateState, dispatch,
+             navigate, event.target.id) */
+    }
+
+
     return (
         <>
             <Grid container >
-                {(trending.length) ?
+                {(trending?.length) ?
                     <Grid container lg={4} xs={12} order={{ lg: 1, xs: 2 }} >
                         {/*  For trending items */}
                         <Container>
                             <Card>
                                 <CardContent>
                                     <CardHeader component="string" title='Hot Trends' />
-
-
                                     <Grid container rowSpacing={1} >
-                                        {state.trending.map((_, indx) => (
+                                        {trending.map((item, indx) => (
                                             <Grid item xs={12}>
-                                                <Card   >
+                                                <Card >
                                                     <CardContent>
-                                                        <CardMedia component={'img'} image={sampleImg} />
-                                                        <Grid container>
-                                                            <Grid item xs={12} >
-                                                                {"Title " + indx}
-                                                            </Grid>
-                                                            <Grid item xs={6}>
-                                                                {"Rating " + indx}
-                                                            </Grid>
-                                                            <Grid item xs={6}>
-                                                                {"Price " + indx}
-                                                            </Grid>
+                                                        <div id={item.inventory_id}
+                                                            onClick={handleItemClick}>
+                                                            <CardMedia component={'img'} image={sampleImg} />
+                                                            <Grid container>
+                                                                <Grid item xs={12} >
+                                                                    {/* title */}
+                                                                    {item.title}
+                                                                </Grid>
+                                                                <Grid item xs={6}>
+                                                                    {/* rating */}
+                                                                    {item.rating}
+                                                                </Grid>
+                                                                <Grid item xs={6}>
+                                                                    {/* price */}
+                                                                    {item.price}
+                                                                </Grid>
 
-                                                        </Grid>
+                                                            </Grid>
+                                                        </div>
+
                                                         <CardActions>
-                                                            <Button variant="contained" size="small" startIcon={<AddShoppingCart />} >
+                                                            <Button variant="contained" size="small"
+                                                                startIcon={<AddShoppingCart />}
+                                                                id={item.inventory_id}
+                                                                onClick={handleAddToCart}>
                                                                 Add to Cart
                                                             </Button>
-
                                                         </CardActions>
                                                     </CardContent>
                                                 </Card>
@@ -81,33 +118,41 @@ function Home(props) {
                     null
                 }
 
-                {(latest.length) ?
+                {(latest?.length) ?
                     <Grid container rowSpacing={1} lg={4} xs={12} order={{ lg: 2, xs: 1 }}>
                         {/* For most recently added items */}
-                        {state.latest.map((_, indx) =>
+                        {latest.map((item, indx) =>
                         (<Grid item lg={4} xs={12}>
-                            <Container>
-                                <Card   >
-
+                            <Container >
+                                <Card  >
                                     <CardContent>
-                                        <CardMedia component={'img'} image={sampleImg} />
-                                        <Grid container>
-                                            <Grid item xs={12} >
-                                                {"Title " + indx}
-                                            </Grid>
-                                            <Grid item xs={6}>
-                                                {"Rating " + indx}
-                                            </Grid>
-                                            <Grid item xs={6}>
-                                                {"Price " + indx}
-                                            </Grid>
+                                        <div id={item.inventory_id}
+                                            onClick={handleItemClick}>
+                                            <CardMedia component={'img'} image={sampleImg} />
+                                            <Grid container>
+                                                <Grid item xs={12} >
+                                                    {/* title */}
+                                                    {item.title}
+                                                </Grid>
+                                                <Grid item xs={6}>
+                                                    {/* rating */}
+                                                    {item.rating}
+                                                </Grid>
+                                                <Grid item xs={6}>
+                                                    {/* price */}
+                                                    {item.price}
+                                                </Grid>
 
-                                        </Grid>
+                                            </Grid>
+                                        </div>
+
                                         <CardActions>
-                                            <Button variant="contained" size="small" startIcon={<AddShoppingCart />} >
+                                            <Button variant="contained" size="small"
+                                                startIcon={<AddShoppingCart />}
+                                                id={item.inventory_id}
+                                                onClick={handleAddToCart}>
                                                 Add to Cart
                                             </Button>
-
                                         </CardActions>
                                     </CardContent>
                                 </Card>
@@ -142,28 +187,37 @@ function Home(props) {
                                     <CardHeader component="string" title='Latest Releases' />
 
                                     <Grid container rowSpacing={1} >
-                                        {state.viewed.map((trend) => (
+                                        {viewed.map((item, indx) => (
                                             <Grid item xs={12}>
-                                                <Card   >
+                                                <Card >
                                                     <CardContent>
-                                                        <CardMedia component={'img'} image={sampleImg} />
-                                                        <Grid container>
-                                                            <Grid item xs={12} >
-                                                                {"Title "}
-                                                            </Grid>
-                                                            <Grid item xs={6}>
-                                                                {"Rating "}
-                                                            </Grid>
-                                                            <Grid item xs={6}>
-                                                                {"Price "}
-                                                            </Grid>
+                                                        <div id={item.inventory_id}
+                                                            onClick={handleItemClick}>
+                                                            <CardMedia component={'img'} image={sampleImg} />
+                                                            <Grid container>
+                                                                <Grid item xs={12} >
+                                                                    {/* title */}
+                                                                    {item.title}
+                                                                </Grid>
+                                                                <Grid item xs={6}>
+                                                                    {/* rating */}
+                                                                    {item.rating}
+                                                                </Grid>
+                                                                <Grid item xs={6}>
+                                                                    {/* price */}
+                                                                    {item.price}
+                                                                </Grid>
 
-                                                        </Grid>
+                                                            </Grid>
+                                                        </div>
+
                                                         <CardActions>
-                                                            <Button variant="contained" size="small" startIcon={<AddShoppingCart />} >
+                                                            <Button variant="contained" size="small"
+                                                                startIcon={<AddShoppingCart />}
+                                                                id={item.inventory_id}
+                                                                onClick={handleAddToCart}>
                                                                 Add to Cart
                                                             </Button>
-
                                                         </CardActions>
                                                     </CardContent>
                                                 </Card>

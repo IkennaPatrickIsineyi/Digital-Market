@@ -1,4 +1,5 @@
-exports.signUp = (event, state, updateState) => {
+exports.signUp = (event, state, updateState, dispatch,
+    loadUserData, loginComplete) => {
     console.log('sign up');
     const email = state.email;
     const password1 = state.password1;
@@ -7,6 +8,7 @@ exports.signUp = (event, state, updateState) => {
     const lastName = state.lastName;
     const gender = state.gender;
     const isSeller = state.isSeller;
+    const nextRoute = state.returnData.nextRoute;
 
     const showSnackBar = (message, severity) => {
         updateState({
@@ -21,7 +23,9 @@ exports.signUp = (event, state, updateState) => {
     if (email && password1 && password2 && firstName && lastName
         && gender && isSeller && (password1 === password2)) {
         const body = JSON.stringify({
-            email: email, password: password1, gender: gender, isSeller: (isSeller === 'true') ? true : false,
+            ...state.returnData, reRoute: Boolean(nextRoute.length),
+            email: email, password: password1, gender: gender,
+            isSeller: (isSeller === 'true') ? true : false,
             firstName: firstName, lastName: lastName
         });
 
@@ -33,13 +37,17 @@ exports.signUp = (event, state, updateState) => {
 
         const callback = (body) => {
             if (body?.result) {
-                console.log('success');
-                state.navigate('/', {
-                    state: {
-                        frontPage: body.result.frontPage,
-                        userData: body.result.userData
-                    }
-                })
+                /*  console.log('success');
+                 dispatch(loadFrontPageData(body.result.frontPage));
+                 dispatch(loadUserData(body.userData));
+                 state.navigate('/'); */
+
+                const userData = body.userData;
+                dispatch(loadUserData({
+                    email: userData?.email, isAdmin: userData?.is_admin,
+                    isSeller: userData?.is_seller
+                }));
+                dispatch(loginComplete());
             }
             else if (body?.error === 'already-logged-in') {
                 console.log('already logged in');

@@ -1,15 +1,22 @@
 import { Box, Button, Card, CardContent, Grid, TextField } from "@mui/material";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { useLocation, useNavigate } from "react-router-dom";
 import { remoteRequest } from "../app/model";
+import { reRouteRequest } from "../app/routeSlice";
 import { snackBar } from "../app/SharedComponent";
-import { sendOtp } from "./sendOtpCodeLogic";
+import { sendOtp } from "./TestCompLogic";
 
-function SendOtpCode() {
+function TestComp(key = 'sam') {
     const navigate = useNavigate();
-    const [states, setState] = useState({
-        navigate: navigate,
-        remoteRequest: remoteRequest, email: '',
+    const dispatch = useDispatch();
+    const location = useLocation();
+
+    console.log(location.state)
+
+    const [states, setState] = useState(location.state ?? {
+        count: 0, data: 0,
+        email: '',
         snackbar: { open: false, message: '', severity: '', autoHideDuration: 6000 }
     });
 
@@ -23,16 +30,20 @@ function SendOtpCode() {
                 <CardContent>
                     <Grid container rowSpacing={2}>
                         <Grid item xs={12} display='flex' justifyContent='center' alignItems='center'>
-                            What is your email address?
+                            {'Count: ' + states.count + 'Data: ' + states.data}
                         </Grid>
                         <Grid item xs={12}>
                             <TextField fullWidth variant="outlined" label='email' type={'email'}
-                                onChange={(event) => { updateState({ email: event.target.value }) }}
+
+                                onChange={(event) => { updateState({ count: event.target.value }) }}
                             />
                         </Grid>
                         <Grid item xs={12} display='flex' justifyContent='center' alignItems='center'>
                             <Button variant="contained"
-                                onClick={(event) => { sendOtp(event, states, updateState) }}>
+                                onClick={(event) => {
+                                    //  sendOtp(event, states, updateState, dispatch, reRouteRequest, remoteRequest)
+                                    navigate('/testComp2')
+                                }}>
                                 Receive OTP Code
                             </Button>
                         </Grid>
@@ -44,4 +55,4 @@ function SendOtpCode() {
     );
 }
 
-export default SendOtpCode;
+export default TestComp;
